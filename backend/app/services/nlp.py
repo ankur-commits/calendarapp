@@ -1,0 +1,166 @@
+import json
+import re
+from datetime import datetime, timedelta, date
+from typing import Dict, List, Optional, Any
+import openai
+from openai import OpenAI
+import os
+
+def parse_natural_query(
+    query: str,
+    openai_client: Optional[OpenAI] = None,
+    model: str = "gpt-4o-mini"
+) -> Dict[str, Any]:
+    """
+    Parse a natural language query into structured data for a family calendar application.
+    Supports "Stream of Consciousness" input containing multiple entities.
+    """
+    
+    client = openai_client or OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    current_date = date.today().strftime("%Y-%m-%d")
+    current_weekday = date.today().strftime("%A")
+    
+    system_prompt = f"""You are an intelligent Family Operating System assistant. Your job is to parse unstructured "stream of consciousness" text from a parent into structured JSON.
+    
+    Current Context:
+    - Date: {current_date} ({current_weekday})
+    
+    The user may describe mixed intent types in a single message:
+    1. Calendar Events (appointments, sports, meetings)
+    2. Chores (tasks assigned to people)
+    3. Shopping Items (groceries, supplies)
+    
+    Output JSON structure:
+    {{
+        "events": [
+            {{
+                "title": "Concise Title",
+                "description": "Details",
+                "location": "Location Name",
+                "start_time": "HH:MM" (24h),
+                "end_time": "HH:MM" (24h, infer duration if missing, default 1h),
+                "date": "YYYY-MM-DD",
+                "attendees": ["Name1"],
+                "category": "Category"
+            }}
+        ],
+        "chores": [
+            {{
+                "title": "Chore Title",
+                "assigned_to": "Name",
+                "due_date": "YYYY-MM-DD",
+                "reward_amount": 0
+            }}
+        ],
+        "shopping_items": [
+            {{
+                "name": "Item Name",
+                "category": "Food/General"
+            }}
+        ]
+    }}
+    
+    Rules:
+    - If date is "next Tuesday", calculate YYYY-MM-DD based on Current Date.
+    - If "tonight", assume 19:00 today.
+    - Infer attendees and assignments from context (e.g., "Tell Dad to fix the sink" -> chore assigned to Dad).
+    - Return empty arrays if no items of that type are found.
+    - Return ONLY valid JSON.
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            temperature=0.0,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Parse this family intent: {query}"}
+            ]
+        )
+        
+        result_text = response.choices[0].message.content.strip()
+        
+        try:
+            parsed_result = json.loads(result_text)
+        except json.JSONDecodeError:
+            json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
+            if json_match:
+                parsed_result = json.loads(json_match.group())
+            else:
+                # If completely failed to parse JSON, wrap as a single generic event
+                return _fallback_parse(query)
+                
+        # Validate structure
+        if "events" not in parsed_result: parsed_result["events"] = []
+        if "chores" not in parsed_result: parsed_result["chores"] = []
+        if "shopping_items" not in parsed_result: parsed_result["shopping_items"] = []
+        
+        return parsed_result
+        
+    except Exception as e:
+        print(f"Error parsing query with LLM: {e}")
+        return _fallback_parse(query)
+
+
+def _resolve_day_to_date(day_name: str) -> Optional[date]:
+    # Helper no longer primarily used by LLM but kept for utility
+    days_of_week = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    try:
+        target_day_index = days_of_week.index(day_name.lower())
+    except ValueError:
+        return None
+    
+    today = date.today()
+    today_index = today.weekday()
+    
+    days_until = (target_day_index - today_index + 7) % 7
+    if days_until == 0:
+        days_until = 7
+    
+    next_date = today + timedelta(days=days_until)
+    return next_date
+
+
+def _fallback_parse(query: str) -> Dict[str, Any]:
+    """
+    Fallback that creates a simple event from the query string.
+    """
+    return {
+        "events": [{
+            "title": query,
+            "start_time": "09:00",
+            "end_time": "10:00",
+            "date": date.today().strftime("%Y-%m-%d"),
+            "category": "General"
+        }],
+        "chores": [],
+        "shopping_items": []
+    }
+
+def parse_voice_command(
+    audio_file_path: str,
+    openai_client: Optional[OpenAI] = None
+) -> Dict[str, Any]:
+    """
+    Transcribes audio file using Whisper and then parses the intent.
+    """
+    client = openai_client or OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    # 1. Transcribe
+    try:
+        with open(audio_file_path, "rb") as audio_file:
+            print(f"Transcribing file: {audio_file_path}")
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file
+            )
+            text = transcription.text
+            print(f"Transcription result: {text}")
+            
+    except Exception as e:
+        print(f"Transcription failed: {e}")
+        # Fallback or re-raise
+        raise e
+    
+    return parse_natural_query(text, openai_client=client)

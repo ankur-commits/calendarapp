@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+openai
+beautifulsoup4
+requests
+python-dotenv
+alembic
+passlib[bcrypt]
+python-jose
+google-generativeai
+pytest
+httpx
+pytest-asyncio

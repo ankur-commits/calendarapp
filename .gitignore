@@ -1,0 +1,30 @@
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+.DS_Store
+*.db
+*.sqlite3
+
+# JavaScript/Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+dist/
+build/
+coverage/
+
+# Misc
+.vscode/
+.idea/
+*.swp
