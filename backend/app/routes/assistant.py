@@ -33,16 +33,11 @@ class SearchResponse(BaseModel):
 
 @router.post("/search", response_model=SearchResponse)
 async def search_events(request: SearchRequest = Body(...), db: Session = Depends(get_db)):
-    """
-    AI Assistant endpoint to search/generate event ideas using Google Gemini with Search Grounding.
-    """
-    import google.generativeai as genai
-    from google.protobuf.json_format import MessageToDict
+    from google import genai
+    from google.genai import types
     
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    
-    # Use Gemini Flash Latest for valid model name
-    model = genai.GenerativeModel('models/gemini-flash-latest')
+    # Initialize Client
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
     # Fetch available users to help with attendee suggestions
     users = db.query(models.User).all()
@@ -97,10 +92,12 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
     
     try:
         # Generate content with Google Search tool enabled
-        tool = genai.protos.Tool(google_search=genai.protos.Tool.GoogleSearch())
-        response = model.generate_content(
-            prompt,
-            tools=[tool]
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
         )
         
         # Extract text response
@@ -115,14 +112,6 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
             
         data = json.loads(result_text)
         
-        # Post-process: ground with source URLs if missing in JSON but present in grounding metadata
-        # (Gemini often puts links in the text, but we asked for JSON 'ticket_url')
-        # If 'ticket_url' is missing/empty, we can try to inspect grounding_metadata, 
-        # but usually Gemini 1.5 is good at extracting it into the JSON if requested.
-        
-        # However, to capture the exact "Buy" link from grounding might be complex if not in JSON.
-        # Let's trust the model to put it in 'ticket_url' as requested.
-        
         # Basic validation
         final_suggestions = []
         for item in data.get("suggestions", []):
@@ -130,10 +119,6 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
             url = item.get("ticket_url")
             desc = item.get("description", "")
             if url and "http" in url:
-               # We can embed it in description for the frontend to render (if it supports HTML/Markdown)
-               # OR we rely on the frontend having a "Buy Tickets" button.
-               # The current EventAssistant UI generates "Add to Calendar". 
-               # We can append the link to description so it saves in the calendar event.
                item["description"] = f"{desc}\n\n[Buy Tickets]({url})"
             
             final_suggestions.append(item)
@@ -142,7 +127,5 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
 
     except Exception as e:
         print(f"Error in Gemini search: {e}")
-        # Fallback to Ticketmaster/Creative check or just error
-        # Reverting to basic Ticketmaster if Gemini fails?
         # For now, just raise 500
         raise HTTPException(status_code=500, detail=str(e))

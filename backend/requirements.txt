@@ -11,7 +11,7 @@ alembic
 passlib
 argon2-cffi
 python-jose
-google-generativeai
+google-genai
 pytest
 httpx
 pytest-asyncio
