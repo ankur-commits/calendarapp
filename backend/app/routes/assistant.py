@@ -37,7 +37,7 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
     from google.genai import types
     
     # Initialize Client
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), http_options={'api_version': 'v1alpha'})
     
     # Fetch available users to help with attendee suggestions
     users = db.query(models.User).all()
