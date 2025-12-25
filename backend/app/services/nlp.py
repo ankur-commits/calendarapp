@@ -9,7 +9,8 @@ import os
 def parse_natural_query(
     query: str,
     openai_client: Optional[OpenAI] = None,
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o-mini",
+    user_context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Parse a natural language query into structured data for a family calendar application.
@@ -29,12 +30,18 @@ def parse_natural_query(
          next_7_days.append(f"{d.strftime('%A')}: {d.strftime('%Y-%m-%d')}")
     next_7_days_str = "\n    - ".join(next_7_days)
     
+    # Address Context
+    address_context = ""
+    if user_context and user_context.get("home_address"):
+        address_context = f"- User's Home Address: {user_context.get('home_address')}\n    (If a generic location name like 'Chase Bank' or 'Grocery Store' is given, assume it is the one closest to this address)"
+
     system_prompt = f"""You are an intelligent Family Operating System assistant. Your job is to parse unstructured "stream of consciousness" text from a parent into structured JSON.
     
     Current Context:
     - Today: {current_date} ({current_weekday})
     - Upcoming Days Reference:
     - {next_7_days_str}
+    {address_context}
     
     The user may describe mixed intent types in a single message:
     1. Calendar Events (appointments, sports, meetings)
@@ -47,7 +54,7 @@ def parse_natural_query(
             {{
                 "title": "Concise Title",
                 "description": "Details",
-                "location": "Location Name",
+                "location": "Location Name (Specific address if inferred from home + generic name)",
                 "start_time": "HH:MM" (24h),
                 "end_time": "HH:MM" (24h, infer duration if missing, default 1h),
                 "date": "YYYY-MM-DD",
@@ -150,7 +157,8 @@ def _fallback_parse(query: str) -> Dict[str, Any]:
 
 def parse_voice_command(
     audio_file_path: str,
-    openai_client: Optional[OpenAI] = None
+    openai_client: Optional[OpenAI] = None,
+    user_context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Transcribes audio file using Whisper and then parses the intent.
@@ -173,4 +181,4 @@ def parse_voice_command(
         # Fallback or re-raise
         raise e
     
-    return parse_natural_query(text, openai_client=client)
+    return parse_natural_query(text, openai_client=client, user_context=user_context)

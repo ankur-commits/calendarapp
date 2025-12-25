@@ -71,8 +71,12 @@ export default function VoiceInput({ onEventCreated, onOpenModal, isCompact = fa
         formData.append("file", audioBlob, "recording.webm");
 
         try {
+            const token = localStorage.getItem("token");
             const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/voice/process`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    "Authorization": `Bearer ${token}`
+                },
             });
 
             // Backend now returns { status: "success", parsed_data: { events: [], chores: [], shopping_items: [] } }

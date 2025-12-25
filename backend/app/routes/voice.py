@@ -1,16 +1,19 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends
 from openai import OpenAI
 import os
 import shutil
 import requests
 from pathlib import Path
 from ..services.nlp import parse_natural_query, parse_voice_command
+from ..auth import get_current_user
+from .. import models
 
 router = APIRouter()
 
 @router.post("/process")
 async def process_voice(
     file: UploadFile = File(...),
+    current_user: models.User = Depends(get_current_user)
 ):
     """
     Process an audio file:
@@ -26,8 +29,17 @@ async def process_voice(
         with temp_file.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Call service
-        parsed_data = parse_voice_command(str(temp_file), openai_client=client)
+        # Get user address from preferences if available
+        user_address = None
+        if current_user.preferences:
+            user_address = current_user.preferences.get("address")
+
+        # Call service with user context
+        parsed_data = parse_voice_command(
+            str(temp_file), 
+            openai_client=client,
+            user_context={"home_address": user_address}
+        )
         
         return {
             "status": "success",
