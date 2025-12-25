@@ -36,6 +36,12 @@ export default function CalendarView({ events, onSelectSlot, onSelectEvent }: Ca
     const [view, setView] = useState<View>(Views.MONTH);
     const [date, setDate] = useState(new Date());
 
+    useEffect(() => {
+        if (window.innerWidth < 768) {
+            setView(Views.DAY);
+        }
+    }, []);
+
     // Transform API events to BigCalendar events
     const validEvents = events.map(evt => {
         // Backend returns UTC timestamps but might be missing 'Z' suffix (naive).
