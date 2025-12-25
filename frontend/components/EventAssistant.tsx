@@ -52,7 +52,7 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
         setSuggestions([]); // Clear previous
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/chat`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/search`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
