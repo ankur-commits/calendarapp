@@ -18,13 +18,23 @@ def parse_natural_query(
     
     client = openai_client or OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    current_date = date.today().strftime("%Y-%m-%d")
-    current_weekday = date.today().strftime("%A")
+    today = date.today()
+    current_date = today.strftime("%Y-%m-%d")
+    current_weekday = today.strftime("%A")
+    
+    # Calculate next 7 days map for the LLM
+    next_7_days = []
+    for i in range(1, 8):
+         d = today + timedelta(days=i)
+         next_7_days.append(f"{d.strftime('%A')}: {d.strftime('%Y-%m-%d')}")
+    next_7_days_str = "\n    - ".join(next_7_days)
     
     system_prompt = f"""You are an intelligent Family Operating System assistant. Your job is to parse unstructured "stream of consciousness" text from a parent into structured JSON.
     
     Current Context:
-    - Date: {current_date} ({current_weekday})
+    - Today: {current_date} ({current_weekday})
+    - Upcoming Days Reference:
+    - {next_7_days_str}
     
     The user may describe mixed intent types in a single message:
     1. Calendar Events (appointments, sports, meetings)
