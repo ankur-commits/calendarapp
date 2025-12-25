@@ -45,7 +45,7 @@ export default function Home() {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/events/");
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/events/`);
       setEvents(response.data);
     } catch (error) {
       console.error("Error fetching events:", error);

@@ -22,10 +22,21 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            await axios.post("http://localhost:8000/api/auth/register", {
-                ...formData,
-                preferences: {} // Init empty preferences
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    preferences: {} // Init empty preferences
+                }),
             });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.detail || "Registration failed.");
+            }
 
             alert("Registration successful! Please sign in.");
             router.push("/login");

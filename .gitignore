@@ -28,3 +28,7 @@ coverage/
 .vscode/
 .idea/
 *.swp
+*.docx
+
+# Streamlit
+.streamlit/secrets.toml

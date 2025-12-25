@@ -23,7 +23,7 @@ export default function LoginPage() {
             params.append('username', formData.username);
             params.append('password', formData.password);
 
-            const response = await axios.post("http://localhost:8000/api/auth/token", params);
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, params);
 
             // Store token
             localStorage.setItem("token", response.data.access_token);

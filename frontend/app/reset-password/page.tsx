@@ -26,10 +26,22 @@ function ResetPasswordForm() {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post("http://localhost:8000/api/auth/reset-password", {
-                token,
-                new_password: password
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token,
+                    new_password: password
+                }),
             });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to reset password');
+            }
+
             alert("Password updated! Please login.");
             router.push("/login");
         } catch (error) {

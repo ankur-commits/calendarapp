@@ -52,12 +52,22 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
         setSuggestions([]); // Clear previous
 
         try {
-            const response = await axios.post("http://localhost:8000/api/assistant/search", {
-                query: query
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query })
             });
 
-            if (response.data.suggestions) {
-                setSuggestions(response.data.suggestions);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.suggestions) {
+                setSuggestions(data.suggestions);
             }
         } catch (err) {
             console.error("Search error:", err);

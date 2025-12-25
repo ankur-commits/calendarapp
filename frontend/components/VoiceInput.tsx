@@ -71,7 +71,7 @@ export default function VoiceInput({ onEventCreated, onOpenModal, isCompact = fa
         formData.append("file", audioBlob, "recording.webm");
 
         try {
-            const response = await axios.post("http://localhost:8000/api/voice/process", formData, {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/voice/process`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 

@@ -14,7 +14,11 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post("http://localhost:8000/api/auth/request-reset-password", { email });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
             setSuccess(true);
         } catch (error) {
             console.error(error);

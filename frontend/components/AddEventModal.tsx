@@ -94,7 +94,7 @@ export default function AddEventModal({ isOpen, onClose, onEventCreated, initial
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get("http://localhost:8000/api/users/");
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users/`);
             const allUsers = response.data;
             setUsers(allUsers);
 
