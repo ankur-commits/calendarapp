@@ -13,7 +13,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
 
 import TimelineView from "@/components/TimelineView";
-import { List, Calendar as CalendarIcon, Menu, X } from "lucide-react";
+import { List, Calendar as CalendarIcon, Menu, X, Sparkles } from "lucide-react";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -24,6 +24,7 @@ export default function Home() {
   // Hoisted state
   const [events, setEvents] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -149,6 +150,33 @@ export default function Home() {
           )}
         </div>
 
+        {/* Assistant Drawer (Mobile) */}
+        {isAssistantOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+            onClick={() => setIsAssistantOpen(false)}
+          />
+        )}
+        <div className={`fixed inset-y-0 right-0 z-30 w-80 bg-white shadow-xl transform transition-transform duration-300 lg:hidden ${isAssistantOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="h-full flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                AI Assistant
+              </h3>
+              <button onClick={() => setIsAssistantOpen(false)}>
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden p-4">
+              <EventAssistant onAddEvent={(data) => {
+                setIsAssistantOpen(false);
+                handleOpenModal(data);
+              }} />
+            </div>
+          </div>
+        </div>
+
         <main className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Top Action Header */}
           <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
@@ -197,6 +225,14 @@ export default function Home() {
                 data-testid="add-event-btn"
               >
                 Add Event
+              </button>
+
+              <button
+                onClick={() => setIsAssistantOpen(true)}
+                className="p-2 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md lg:hidden"
+                title="AI Assistant"
+              >
+                <Sparkles className="w-5 h-5" />
               </button>
             </div>
           </header>
