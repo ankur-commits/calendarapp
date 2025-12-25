@@ -127,9 +127,9 @@ export default function SettingsPage() {
 
         try {
             if (selectedUser) {
-                await axios.put(`http://localhost:8000/api/users/${selectedUser.id}`, payload);
+                await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${selectedUser.id}`, payload);
             } else {
-                await axios.post("http://localhost:8000/api/users", payload);
+                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, payload);
             }
             fetchUsers();
             setIsEditing(false);
