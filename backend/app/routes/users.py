@@ -22,7 +22,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     db_user = models.User(
         name=user.name, 
-        email=user.email, 
+        email=user.email.lower(), 
         hashed_password=hashed_password,
         role=user.role,
         phone_number=user.phone_number,
