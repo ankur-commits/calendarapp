@@ -258,8 +258,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
-    </AuthGuard >
+      </DashboardLayout>
+    </AuthGuard>
   );
 }
