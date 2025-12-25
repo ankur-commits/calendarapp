@@ -13,7 +13,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
 
 import TimelineView from "@/components/TimelineView";
-import { List, Calendar as CalendarIcon, Menu, X, Sparkles } from "lucide-react";
+import { List, Calendar as CalendarIcon, Menu, X, Sparkles, Plus } from "lucide-react";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -208,7 +208,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <VoiceInput
                 isCompact={true}
                 onEventCreated={handleEventCreated}
@@ -220,11 +220,12 @@ export default function Home() {
                   setModalInitialData(null);
                   setIsModalOpen(true);
                 }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors shadow-sm"
+                className="bg-blue-600 text-white p-2 md:px-4 md:py-2 rounded-md hover:bg-blue-700 transition-colors shadow-sm"
                 title="Add Event (Press 'C')"
                 data-testid="add-event-btn"
               >
-                Add Event
+                <span className="md:hidden"><Plus className="w-5 h-5" /></span>
+                <span className="hidden md:inline">Add Event</span>
               </button>
 
               <button
