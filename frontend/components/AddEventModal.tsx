@@ -55,6 +55,22 @@ export default function AddEventModal({ isOpen, onClose, onEventCreated, initial
                     // Map attendees from object array if needed, or fallback to simple mapping
                     attendee_ids: initialData.attendee_ids || initialData.attendees?.map((u: any) => u.id) || []
                 }));
+            } else {
+                // Reset to defaults if no initial data
+                setFormData({
+                    title: "",
+                    description: "",
+                    start_date: new Date().toISOString().split("T")[0],
+                    start_time: "12:00",
+                    end_date: new Date().toISOString().split("T")[0],
+                    end_time: "13:00",
+                    location: "",
+                    category: "General",
+                    attendee_ids: [] as number[]
+                });
+                // Also reset travel time state
+                setTravelTime(0);
+                setShowTravelInput(false);
             }
         }
     }, [isOpen, initialData]);
