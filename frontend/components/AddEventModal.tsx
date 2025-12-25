@@ -141,7 +141,7 @@ export default function AddEventModal({ isOpen, onClose, onEventCreated, initial
         setLoading(true);
         try {
             // @ts-ignore
-            await axios.delete(`http://localhost:8000/api/events/${formData.id}`);
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${formData.id}`);
             onEventCreated();
             onClose();
         } catch (err) {
@@ -189,10 +189,10 @@ export default function AddEventModal({ isOpen, onClose, onEventCreated, initial
             if (formData.id) {
                 // Update
                 // @ts-ignore
-                await axios.put(`http://localhost:8000/api/events/${formData.id}`, payload);
+                await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${formData.id}`, payload);
             } else {
                 // Create
-                await axios.post("http://localhost:8000/api/events/", payload);
+                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/events/`, payload);
             }
 
             onEventCreated();
