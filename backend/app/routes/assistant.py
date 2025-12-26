@@ -40,7 +40,39 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
     try:
-        prompt = request.query
+        # Construct a detailed system prompt
+        system_instruction = """
+        You are a helpful event planning assistant for a family.
+        Your goal is to find REAL events based on the user's query.
+        
+        CRITICAL INSTRUCTIONS:
+        1.  **USE GOOGLE SEARCH**: You MUST use the Google Search tool to find and VALIDATE events. Do not hallucinate.
+        2.  **VERIFY DETAILS**: For every event, verify the date, time, location, and ticket availability.
+        3.  **TICKET LINKS**: You MUST include a direct link to purchase tickets or the official event page.
+        4.  **JSON ONLY**: Your output MUST be a valid JSON object matching the schema below. Do not output markdown formatting (like ```json), just the raw JSON.
+        
+        JSON SCHEMA:
+        {
+            "suggestions": [
+                {
+                    "title": "Event Title",
+                    "description": "Short description. Include the ticket link here if 'ticket_url' field is not enough.",
+                    "start_time": "ISO 8601 format (YYYY-MM-DDTHH:MM:SS)",
+                    "end_time": "ISO 8601 format or null",
+                    "location": "Venue Name, City, State",
+                    "budget_estimate": "e.g., '$50 per person'",
+                    "travel_time_minutes": 30,
+                    "category": "Concert/Sports/etc.",
+                    "suggested_attendees": ["Family"],
+                    "reasoning": "Why is this a good fit?",
+                    "ticket_url": "https://url.to.tickets"
+                }
+            ]
+        }
+        """
+        
+        full_prompt = f"{system_instruction}\n\nUser Query: {request.query}"
+        prompt = full_prompt
         # Generate content with Google Search tool enabled
         response = client.models.generate_content(
             model='gemini-2.0-flash',
