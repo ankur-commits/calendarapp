@@ -52,6 +52,7 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
         
         # Extract text response
         result_text = response.text
+        print(f"DEBUG: Gemini raw response: {result_text}")
         
         # Parse JSON
         # Clean markdown code blocks if present
@@ -60,6 +61,10 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
         elif "```" in result_text:
             result_text = result_text.split("```")[1].split("```")[0].strip()
             
+        print(f"DEBUG: Extracted JSON text: {result_text}")
+        if not result_text:
+             raise ValueError("Empty response from model after cleanup")
+
         data = json.loads(result_text)
         
         # Basic validation
