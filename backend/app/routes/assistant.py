@@ -39,8 +39,8 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
     # Initialize Client
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
-    # ... (lines 42-95)
-
+    try:
+        prompt = request.query
         # Generate content with Google Search tool enabled
         response = client.models.generate_content(
             model='gemini-2.0-flash-exp',
