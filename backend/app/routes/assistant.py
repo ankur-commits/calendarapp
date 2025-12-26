@@ -20,7 +20,7 @@ class EventSuggestion(BaseModel):
     title: str
     description: str
     start_time: str # ISO format
-    end_time: str # ISO format
+    end_time: Optional[str] = None # ISO format
     location: str
     budget_estimate: str
     travel_time_minutes: int
