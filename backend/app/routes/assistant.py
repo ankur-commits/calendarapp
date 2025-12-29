@@ -9,6 +9,7 @@ import os
 import json
 from datetime import datetime, date
 from ..services.ticketmaster import TicketmasterService
+from ..services.ai_learning import AILearningService
 
 router = APIRouter()
 
@@ -116,3 +117,43 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
         print(f"Error in Gemini search: {e}")
         # For now, just raise 500
         raise HTTPException(status_code=500, detail=str(e))
+
+class InteractRequest(BaseModel):
+    query: str
+    user_id: int # Required for profile context
+    
+class InteractResponse(BaseModel):
+    events: List[dict]
+    shopping_list: List[dict]
+    todos: List[dict]
+    clarification_needed: Optional[str] = None
+
+@router.post("/interact", response_model=InteractResponse)
+async def interact(request: InteractRequest = Body(...), db: Session = Depends(get_db)):
+    service = AILearningService(db)
+    
+    try:
+        # 1. Parse Multi-Intent
+        parsed_data = await service.parse_multi_intent(request.user_id, request.query)
+        
+        # 2. Return structured data for "Action Cards"
+        return {
+            "events": parsed_data.get("events", []),
+            "shopping_list": parsed_data.get("shopping_list", []),
+            "todos": parsed_data.get("todos", [])
+        }
+        
+    except Exception as e:
+        print(f"Error in interaction: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/learn")
+async def learn_interaction(
+    user_id: int = Body(...),
+    user_input: str = Body(...),
+    actual_action: dict = Body(...),
+    db: Session = Depends(get_db)
+):
+    service = AILearningService(db)
+    service.learn_from_interaction(user_id, user_input, actual_action)
+    return {"status": "success"}

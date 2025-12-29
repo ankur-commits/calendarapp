@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, Table
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, Table, Float
 from sqlalchemy.orm import relationship
 from .database import Base
 import datetime
@@ -83,6 +83,38 @@ class Chore(Base):
     family = relationship("Family")
     assigned_to = relationship("User")
 
+    family = relationship("Family")
+    added_by = relationship("User")
+
+class UserProfileAttribute(Base):
+    __tablename__ = "user_profile_attributes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    key = Column(String, index=True) # e.g. "sports_location_soccer"
+    value = Column(String) # e.g. "Lincoln Fields"
+    confidence = Column(Float, default=1.0)
+    last_updated = Column(DateTime, default=datetime.datetime.utcnow)
+    
+    user = relationship("User", backref="profile_attributes")
+
+class ToDo(Base):
+    __tablename__ = "todos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    status = Column(String, default="pending") # pending, completed
+    due_date = Column(DateTime, nullable=True)
+    
+    family_id = Column(Integer, ForeignKey("families.id"))
+    assigned_to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"))
+    
+    family = relationship("Family")
+    assigned_to = relationship("User", foreign_keys=[assigned_to_user_id])
+    created_by = relationship("User", foreign_keys=[created_by_user_id])
+
+# Update ShoppingItem to include created_at
 class ShoppingItem(Base):
     __tablename__ = "shopping_items"
 
@@ -90,6 +122,7 @@ class ShoppingItem(Base):
     name = Column(String, index=True)
     category = Column(String, default="General")
     is_bought = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     family_id = Column(Integer, ForeignKey("families.id"))
     added_by_user_id = Column(Integer, ForeignKey("users.id"))

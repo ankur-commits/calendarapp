@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Calendar as CalendarIcon, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Settings, Calendar as CalendarIcon, BarChart3, ShoppingCart, CheckSquare } from "lucide-react";
 import UserSwitcher from "./UserSwitcher";
 
 export default function Sidebar() {
@@ -39,6 +39,28 @@ export default function Sidebar() {
                     >
                         <BarChart3 className="w-5 h-5" />
                         Analytics
+                    </Link>
+
+                    <Link
+                        href="/shopping"
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive("/shopping")
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            }`}
+                    >
+                        <ShoppingCart className="w-5 h-5" />
+                        Shopping List
+                    </Link>
+
+                    <Link
+                        href="/todos"
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive("/todos")
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            }`}
+                    >
+                        <CheckSquare className="w-5 h-5" />
+                        To Do / Reminders
                     </Link>
 
                     <Link

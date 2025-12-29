@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routes import events, voice, users, auth, assistant
+from .routes import events, voice, users, auth, assistant, shopping, todos
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,6 +24,8 @@ app.include_router(voice.router, prefix="/api/voice", tags=["voice"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(assistant.router, prefix="/api/assistant", tags=["assistant"])
+app.include_router(shopping.router, prefix="/api/shopping", tags=["shopping"])
+app.include_router(todos.router, prefix="/api/todos", tags=["todos"])
 
 @app.get("/")
 def read_root():

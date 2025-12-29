@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Calendar, dateFnsLocalizer, Views, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -17,48 +17,93 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
-// ... interfaces ...
 interface Event {
     id: string;
     title: string;
     start_time: string;
     end_time: string;
     category?: string;
+    attendees?: any[];
+    driver?: any;
 }
 
 interface CalendarViewProps {
     events: Event[];
-    onSelectSlot: (slot: { start: Date; end: Date }) => void;
+    users?: any[];
+    isFamilyView?: boolean;
+    onSelectSlot: (slot: { start: Date; end: Date; resourceId?: number }) => void;
     onSelectEvent?: (event: any) => void;
 }
 
-export default function CalendarView({ events, onSelectSlot, onSelectEvent }: CalendarViewProps) {
+export default function CalendarView({ events, users, isFamilyView, onSelectSlot, onSelectEvent }: CalendarViewProps) {
     const [view, setView] = useState<View>(Views.MONTH);
     const [date, setDate] = useState(new Date());
 
     useEffect(() => {
-        if (window.innerWidth < 768) {
+        if (isFamilyView) {
             setView(Views.DAY);
+        } else if (window.innerWidth < 768) {
+            setView(Views.DAY);
+        } else {
+            setView(Views.MONTH);
         }
-    }, []);
+    }, [isFamilyView]);
 
-    // Transform API events to BigCalendar events
-    const validEvents = events.map(evt => {
-        // Backend returns UTC timestamps but might be missing 'Z' suffix (naive).
-        // If we parse naive string, browser assumes Local, which is wrong (double conversion).
-        // Force interpretation as UTC.
+    const resources = useMemo(() => {
+        if (!isFamilyView || !users) return undefined;
+        return users.map(u => ({ id: u.id, title: u.name }));
+    }, [isFamilyView, users]);
+
+    const validEvents = useMemo(() => {
+        const processedEvents: any[] = [];
         const ensureUTC = (str: string) => str.endsWith("Z") ? str : str + "Z";
 
-        const start = new Date(ensureUTC(evt.start_time));
-        const end = new Date(ensureUTC(evt.end_time));
-        return {
-            id: evt.id,
-            title: evt.title,
-            start,
-            end,
-            resource: evt
-        };
-    });
+        events.forEach(evt => {
+            const start = new Date(ensureUTC(evt.start_time));
+            const end = new Date(ensureUTC(evt.end_time));
+            const baseEvent = {
+                id: evt.id,
+                title: evt.title,
+                start,
+                end,
+                resource: evt
+            };
+
+            if (isFamilyView) {
+                // Determine which resources (users) this event belongs to
+                const resourceIds = new Set<number>();
+
+                // Attendees
+                if (evt.attendees) {
+                    evt.attendees.forEach(a => resourceIds.add(a.id));
+                }
+
+                // Driver
+                if (evt.driver) {
+                    resourceIds.add(evt.driver.id);
+                }
+
+                if (resourceIds.size === 0) {
+                    // If no assigned users, maybe show in a default column or ignore?
+                    // For now, let's map it to "Unassigned" or just don't show in swimlane if truly strictly 1:1.
+                    // But usually events have at least a creator?
+                    // Let's add it to the creator if available?
+                    // Or just leave it out.
+                } else {
+                    resourceIds.forEach(uid => {
+                        processedEvents.push({
+                            ...baseEvent,
+                            resourceId: uid // Assign to this column
+                        });
+                    });
+                }
+            } else {
+                processedEvents.push(baseEvent);
+            }
+        });
+
+        return processedEvents;
+    }, [events, isFamilyView]);
 
     const eventStyleGetter = (event: any) => {
         let backgroundColor = '#3174ad';
@@ -89,7 +134,12 @@ export default function CalendarView({ events, onSelectSlot, onSelectEvent }: Ca
                 endAccessor="end"
                 style={{ flex: 1, minHeight: 0 }}
                 selectable
-                onSelectSlot={onSelectSlot}
+                onSelectSlot={(slotInfo) => onSelectSlot({
+                    start: slotInfo.start as Date,
+                    end: slotInfo.end as Date,
+                    // @ts-ignore
+                    resourceId: slotInfo.resourceId
+                })}
                 onSelectEvent={(event) => onSelectEvent && onSelectEvent(event.resource)}
                 eventPropGetter={eventStyleGetter}
 
@@ -100,6 +150,11 @@ export default function CalendarView({ events, onSelectSlot, onSelectEvent }: Ca
                 onNavigate={setDate}
 
                 views={[Views.MONTH, Views.WEEK, Views.DAY]}
+
+                // Resource props
+                resources={resources}
+                resourceIdAccessor="id"
+                resourceTitleAccessor="title"
             />
         </div>
     );

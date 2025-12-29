@@ -2,41 +2,29 @@
 
 import { useState, useRef } from "react";
 import axios from "axios";
-import { Search, MapPin, Clock, Users, DollarSign, Sparkles, ArrowRight, Loader2, Car, RotateCcw } from "lucide-react";
-// ... imports
-
-// ... inside component
-
-import { format } from "date-fns";
-
-interface EventSuggestion {
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    location: string;
-    budget_estimate: string;
-    travel_time_minutes: number;
-    category: string;
-    suggested_attendees: string[];
-    reasoning: string;
-}
+import { Search, Sparkles, RotateCcw, Loader2, ArrowRight } from "lucide-react";
+import ActionCard from "./ActionCard";
 
 interface EventAssistantProps {
     onAddEvent: (data: any) => void;
 }
 
+interface AssistantItem {
+    type: 'event' | 'shopping' | 'todo';
+    data: any;
+}
+
 export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
+    const [items, setItems] = useState<AssistantItem[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleReset = () => {
         setQuery("");
-        setSuggestions([]);
+        setItems([]);
         setHasSearched(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
@@ -49,35 +37,36 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
 
         setLoading(true);
         setHasSearched(true);
-        setSuggestions([]); // Clear previous
+        setItems([]);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/search`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ query: query })
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/interact`, {
+                query: query,
+                user_id: 1 // Default user for now
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const data = response.data;
+            const newItems: AssistantItem[] = [];
+
+            if (data.events) {
+                data.events.forEach((evt: any) => newItems.push({ type: 'event', data: evt }));
+            }
+            if (data.shopping_list) {
+                data.shopping_list.forEach((item: any) => newItems.push({ type: 'shopping', data: item }));
+            }
+            if (data.todos) {
+                data.todos.forEach((todo: any) => newItems.push({ type: 'todo', data: todo }));
             }
 
-            const data = await response.json();
+            setItems(newItems);
 
-            if (data.suggestions) {
-                setSuggestions(data.suggestions);
-            }
         } catch (err) {
             console.error("Search error:", err);
-            // alert("Failed to get suggestions");
         } finally {
             setLoading(false);
         }
     };
 
-    // Auto-resize textarea
     const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setQuery(e.target.value);
         if (textareaRef.current) {
@@ -93,26 +82,40 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
         }
     };
 
-    const formatTime = (isoString: string) => {
-        try {
-            return format(new Date(isoString), "MMM d, h:mm a");
-        } catch {
-            return isoString;
-        }
+    const handleAddEvent = async (data: any) => {
+        // Prepare data for the existing modal
+        // Note: The modal expects certain fields.
+        const startDate = data.start_time ? data.start_time.split("T")[0] : new Date().toISOString().split("T")[0];
+        const startTime = data.start_time && data.start_time.includes("T") ? data.start_time.split("T")[1].slice(0, 5) : "12:00";
+
+        // For events, we currently just open the modal via the parent prop.
+        // We'll wrap it in a promise that resolves immediately so the button stops spinning.
+        // In a future version, this could be a direct API call if fully confident.
+        onAddEvent({
+            title: data.title,
+            description: data.description || "",
+            start_date: startDate,
+            start_time: startTime,
+            end_date: startDate, // Default 1 hour
+            end_time: "13:00",
+            location: data.location || "",
+            category: data.category || "General"
+        });
+        return Promise.resolve();
     };
 
-    const handleAddClick = (item: EventSuggestion) => {
-        onAddEvent({
-            title: item.title,
-            description: item.description + "\n\nReasoning: " + item.reasoning,
-            start_date: item.start_time.split("T")[0],
-            start_time: item.start_time.split("T")[1]?.slice(0, 5) || "12:00",
-            end_date: item.end_time.split("T")[0],
-            end_time: item.end_time.split("T")[1]?.slice(0, 5) || "13:00",
-            location: item.location,
-            category: item.category,
-            // We pass raw names, AddEventModal needs to handle or user selects manually
-            // Logic for mapping names to IDs should be upgraded in AddEventModal later
+    const handleAddShopping = async (data: any) => {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/shopping`, {
+            name: data.name,
+            category: data.category || "General"
+        });
+    };
+
+    const handleAddToDo = async (data: any) => {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/todos`, {
+            title: data.title,
+            due_date: data.due_date,
+            status: "pending"
         });
     };
 
@@ -138,65 +141,33 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
                 {loading && (
                     <div className="text-center py-8 text-gray-500 flex flex-col items-center">
                         <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                        <p className="text-sm">Thinking of great ideas...</p>
+                        <p className="text-sm">Thinking...</p>
                     </div>
                 )}
 
-                {!loading && hasSearched && suggestions.length === 0 && (
+                {!loading && hasSearched && items.length === 0 && (
                     <p className="text-center text-gray-500 text-sm py-4">No suggestions found. Try a different query.</p>
                 )}
 
                 {!loading && !hasSearched && (
                     <div className="text-center py-8 text-gray-400">
                         <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                        <p className="text-sm">Ask me to find events, plan outings, or suggest activities!</p>
+                        <p className="text-sm">Suggest events, or say "We need milk and remind me to call Dad"</p>
                     </div>
                 )}
 
                 <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-                    {suggestions.map((item, idx) => (
-                        <div key={idx} className="bg-white rounded-lg border shadow-sm p-4 hover:shadow-md transition-shadow h-full flex flex-col">
-                            <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-bold text-gray-800 line-clamp-2">{item.title}</h4>
-                                <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600 whitespace-nowrap ml-2">{item.category}</span>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-3 flex-1">{item.description}</p>
-
-                            <div className="space-y-2 text-xs text-gray-500 mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-3 h-3 flex-shrink-0" />
-                                    {formatTime(item.start_time)}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">{item.location}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Users className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">
-                                        {item.suggested_attendees.length > 0 ? item.suggested_attendees.join(", ") : "Anyone"}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-dashed">
-                                    <div className="flex items-center gap-1 text-green-700 font-medium">
-                                        <DollarSign className="w-3 h-3" />
-                                        {item.budget_estimate}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-blue-600">
-                                        <Car className="w-3 h-3" />
-                                        {item.travel_time_minutes} min
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handleAddClick(item)}
-                                className="w-full py-2 bg-blue-50 text-blue-600 font-medium text-sm rounded hover:bg-blue-100 transition-colors mt-auto"
-                            >
-                                Add to Calendar
-                            </button>
-                        </div>
+                    {items.map((item, idx) => (
+                        <ActionCard
+                            key={idx}
+                            type={item.type}
+                            data={item.data}
+                            onAdd={
+                                item.type === 'event' ? handleAddEvent :
+                                    item.type === 'shopping' ? handleAddShopping :
+                                        handleAddToDo
+                            }
+                        />
                     ))}
                 </div>
             </div>
@@ -206,7 +177,7 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
                     <Search className="w-5 h-5 text-gray-400 mb-2 ml-1" />
                     <textarea
                         ref={textareaRef}
-                        placeholder="Suggestions for this weekend..."
+                        placeholder="Type something..."
                         className="flex-1 max-h-32 min-h-[24px] py-1.5 px-2 text-sm focus:outline-none resize-none overflow-hidden bg-transparent"
                         value={query}
                         onChange={handleInput}

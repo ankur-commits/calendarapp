@@ -92,6 +92,7 @@ class ShoppingItem(ShoppingItemBase):
     family_id: Optional[int] = None
     added_by_user_id: Optional[int] = None
     added_by: Optional[User] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True
@@ -106,6 +107,38 @@ class Family(FamilyBase):
     id: int
     users: List[User] = []
     events: List[Event] = []
+    
+    class Config:
+        orm_mode = True
+
+class ToDoBase(BaseModel):
+    title: str
+    status: str = "pending"
+    due_date: Optional[datetime] = None
+    assigned_to_user_id: Optional[int] = None
+
+class ToDoCreate(ToDoBase):
+    pass
+
+class ToDo(ToDoBase):
+    id: int
+    family_id: Optional[int] = None
+    created_by_user_id: Optional[int] = None
+    assigned_to: Optional[User] = None
+    created_by: Optional[User] = None
+    
+    class Config:
+        orm_mode = True
+
+class UserProfileAttributeBase(BaseModel):
+    key: str
+    value: str
+    confidence: float = 1.0
+
+class UserProfileAttribute(UserProfileAttributeBase):
+    id: int
+    user_id: int
+    last_updated: datetime
     
     class Config:
         orm_mode = True

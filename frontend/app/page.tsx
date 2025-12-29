@@ -12,16 +12,17 @@ import { format } from "date-fns";
 import AuthGuard from "@/components/AuthGuard";
 import DashboardLayout from "@/components/DashboardLayout";
 import TimelineView from "@/components/TimelineView";
-import { List, Calendar as CalendarIcon, Sparkles, Plus, X } from "lucide-react";
+import { List, Calendar as CalendarIcon, Sparkles, Plus, X, Users } from "lucide-react";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInitialData, setModalInitialData] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<"calendar" | "timeline">("calendar");
+  const [viewMode, setViewMode] = useState<"calendar" | "timeline" | "family">("calendar");
 
   // Hoisted state
   const [events, setEvents] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
@@ -51,6 +52,19 @@ export default function Home() {
       console.error("Error fetching events:", error);
     }
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users/`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleEventCreated = () => {
     setRefreshKey(prev => prev + 1);
@@ -174,6 +188,13 @@ export default function Home() {
                   <CalendarIcon className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={() => setViewMode("family")}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === "family" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                  title="Family View"
+                >
+                  <Users className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => setViewMode("timeline")}
                   className={`p-1.5 rounded-md transition-all ${viewMode === "timeline" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                   title="Timeline View"
@@ -225,9 +246,11 @@ export default function Home() {
 
             {/* Calendar/Timeline Area (Flexible) */}
             <div className="flex-1 h-full p-4 md:p-8 min-w-0 overflow-hidden">
-              {viewMode === "calendar" ? (
+              {viewMode === "calendar" || viewMode === "family" ? (
                 <CalendarView
                   events={events}
+                  users={users}
+                  isFamilyView={viewMode === "family"}
                   onSelectSlot={handleSelectSlot}
                   onSelectEvent={handleSelectEvent}
                 />
