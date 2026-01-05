@@ -47,4 +47,4 @@ databases:
 # Enable Preview Environments for Pull Requests
 previews:
   generation: automatic
-  expireAfter: 5days
+  expireAfterDays: 5
