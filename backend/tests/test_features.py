@@ -30,18 +30,35 @@ def test_logistics_calc():
     assert time > 0
     print(f"Drive time calculated: {time} minutes")
 
+from unittest.mock import MagicMock
+
 def test_voice_command_mock():
     """
-    Test the voice command parser (which uses the mock transcription).
+    Test the voice command parser using a mocked OpenAI client.
     """
     # Create a dummy file
     with open("test_audio.wav", "wb") as f:
         f.write(b"dummy audio content")
         
-    result = parse_voice_command("test_audio.wav")
+    # Mock the OpenAI client
+    mock_client = MagicMock()
+    
+    # 1. Mock Audio Transcription
+    mock_transcription = MagicMock()
+    mock_transcription.text = "Remind me to pick up milk"
+    mock_client.audio.transcriptions.create.return_value = mock_transcription
+    
+    # 2. Mock Chat Completion (for the subsequent parse_natural_query call)
+    mock_completion = MagicMock()
+    # Return a valid JSON string compliant with the expected structure
+    mock_completion.choices[0].message.content = '{"events": [], "shopping_items": [{"name": "milk", "category": "Food"}], "chores": []}'
+    mock_client.chat.completions.create.return_value = mock_completion
+
+    # Call with mock client
+    result = parse_voice_command("test_audio.wav", openai_client=mock_client)
+    
     assert result is not None
-    # The mock returns a hardcoded "Remind me to pick up milk..." so we expect items
-    # But since parse_natural_query usually needs a real LLM to parse cleanly, 
-    # and we might be hitting fallback if no API key, let's just ensure we get a dict.
     assert isinstance(result, dict)
+    assert "shopping_items" in result
+    assert result["shopping_items"][0]["name"] == "milk"
     print(f"Voice Result: {result}")

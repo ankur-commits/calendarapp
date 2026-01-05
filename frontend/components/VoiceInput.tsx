@@ -102,7 +102,15 @@ export default function VoiceInput({ onEventCreated, onOpenModal, isCompact = fa
 
         } catch (err: any) {
             console.error("Error processing audio:", err);
-            setErrorMessage("Error processing audio.");
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+                setErrorMessage("Session expired. Please log in again.");
+                localStorage.removeItem("token");
+                setTimeout(() => {
+                    window.location.href = "/login";
+                }, 1500);
+            } else {
+                setErrorMessage("Error processing audio. Please try again.");
+            }
         } finally {
             setStatus("idle");
         }

@@ -1,0 +1,50 @@
+services:
+  # Backend API Service
+  - type: web
+    name: calendar-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      # Add other environment variables here or in the Render Dashboard
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: calendar-db
+      #     property: connectionString
+      # - key: OPENAI_API_KEY
+      #   sync: false
+
+  # Frontend Next.js Service
+  - type: web
+    name: calendar-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 20.9.0
+      # Link Frontend to Backend
+      # - key: NEXT_PUBLIC_API_URL
+      #   fromService:
+      #     type: web
+      #     name: calendar-backend
+      #     property: url
+
+databases:
+  - name: calendar-db
+    plan: free
+    databaseName: calendar
+    user: calendar_user
+
+# Enable Preview Environments for Pull Requests
+previews:
+  generation: automatic
+  expireAfter: 5days
