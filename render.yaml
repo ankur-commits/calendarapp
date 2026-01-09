@@ -45,6 +45,6 @@ databases:
     user: calendar_user
 
 # Enable Preview Environments for Pull Requests
-previews:
-  generation: automatic
-  expireAfterDays: 5
+# previews:
+#   generation: automatic
+#   expireAfterDays: 5

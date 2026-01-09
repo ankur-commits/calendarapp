@@ -1,8 +1,10 @@
 name: CI Test Runner
 
 on:
+  push:
+    branches: [ "main", "staging" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "staging" ]
 
 jobs:
   backend-test:
