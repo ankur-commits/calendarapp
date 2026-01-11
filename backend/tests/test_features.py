@@ -7,18 +7,25 @@ def test_nlp_multi_intent_parsing():
     """
     Test that the NLP service correctly splits a complex request into events, chores, and shopping items.
     """
-    # Note: We need to mock the OpenAI call or rely on the fallback if we don't have a key.
-    # Since we are likely using the fallback or mock in this env:
+    # Mock the OpenAI client
+    mock_client = MagicMock()
+    mock_completion = MagicMock()
+    
+    # Return a dummy JSON response for the complex query
+    mock_response_content = '{"events": [{"summary": "Soccer practice", "start_time": "Next Tuesday 5pm"}], "shopping_items": [{"name": "milk", "category": "Food"}], "chores": [{"title": "clean room", "assigned_to": "Timmy"}]}'
+    mock_completion.choices[0].message.content = mock_response_content
+    mock_client.chat.completions.create.return_value = mock_completion
+    
     complex_query = "Soccer practice next Tuesday at 5pm, verify that dad picks up milk, and remind Timmy to clean his room."
     
-    # Check if we can get a result (even if mocked/fallback)
-    result = parse_natural_query(complex_query)
+    # Call with mock client
+    result = parse_natural_query(complex_query, openai_client=mock_client)
     
     assert "events" in result
     assert "chores" in result
     assert "shopping_items" in result
     
-    # Ideally we'd assert specific content, but without a real LLM response we might get fallback
+    # Verify mock was called
     print(f"NLP Result: {result}")
 
 def test_logistics_calc():

@@ -64,11 +64,24 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # START CHANGE: Check for DATABASE_URL env var
+    config_section = config.get_section(config.config_ini_section, {})
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        if database_url.startswith("postgres://"):
+             database_url = database_url.replace("postgres://", "postgresql://", 1)
+        config_section["sqlalchemy.url"] = database_url
+    else:
+        # Fallback to sqlite if no env var (e.g. creating local file)
+        # Ensure it matches database.py fallback
+        config_section["sqlalchemy.url"] = "sqlite:///./family_calendar.db"
+    
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config_section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    # END CHANGE
 
     with connectable.connect() as connection:
         context.configure(
