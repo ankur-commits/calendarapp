@@ -9,6 +9,23 @@ load_dotenv()
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# Auto-run migrations on startup
+from alembic.config import Config
+from alembic import command
+import os
+
+@app.on_event("startup")
+async def startup_event():
+    if os.path.exists("alembic.ini"):
+        try:
+            alembic_cfg = Config("alembic.ini")
+            command.upgrade(alembic_cfg, "head")
+            print("Migrations applied successfully.")
+        except Exception as e:
+            print(f"Migration failed: {e}")
+    else:
+        print("alembic.ini not found, skipping migration.")
+
 app = FastAPI(title="Family Calendar API")
 
 app.add_middleware(
