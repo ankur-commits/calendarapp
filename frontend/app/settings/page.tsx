@@ -13,9 +13,10 @@ interface User {
     email: string;
     role?: string;
     phone_number?: string;
+    status?: string; // New
     preferences: {
-        address?: string; // New
-        schedule_travel_time?: boolean; // New
+        address?: string;
+        schedule_travel_time?: boolean;
         interests?: string[];
         wishlist?: string;
         context?: string;
@@ -40,7 +41,10 @@ export default function SettingsPage() {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setUsers(response.data);
             setLoading(false);
         } catch (err) {
@@ -55,8 +59,8 @@ export default function SettingsPage() {
             name: user.name,
             email: user.email,
             phone_number: user.phone_number || "",
-            address: user.preferences?.address || "", // New
-            scheduleTravelTime: user.preferences?.schedule_travel_time || false, // New
+            address: user.preferences?.address || "",
+            scheduleTravelTime: user.preferences?.schedule_travel_time || false,
             interests: user.preferences?.interests?.join(", ") || "",
             wishlist: user.preferences?.wishlist || "",
             context: user.preferences?.context || "",
@@ -77,8 +81,8 @@ export default function SettingsPage() {
             name: "",
             email: "",
             phone_number: "",
-            address: "", // New
-            scheduleTravelTime: false, // New
+            address: "",
+            scheduleTravelTime: false,
             interests: "",
             wishlist: "",
             context: "",
@@ -94,48 +98,61 @@ export default function SettingsPage() {
     };
 
     const handleSave = async () => {
-        const preferences = {
-            address: formData.address, // New
-            schedule_travel_time: formData.scheduleTravelTime, // New
-            interests: formData.interests.split(",").map((s: string) => s.trim()).filter((s: string) => s),
-            wishlist: formData.wishlist,
-            context: formData.context,
-            budget: {
-                min: Number(formData.budgetMin),
-                max: Number(formData.budgetMax),
-                currency: "USD"
-            },
-            dietary: formData.dietary.split(",").map((s: string) => s.trim()).filter((s: string) => s),
-            travel: {
-                max_distance_miles: Number(formData.travelDist),
-                preferred_transport: formData.travelTransport
-            }
-        };
-
-        const payload: any = {
-            name: formData.name,
-            email: formData.email,
-            phone_number: formData.phone_number,
-            role: formData.role,
-            preferences: preferences
-        };
-
-        if (formData.password) {
-            payload.password = formData.password;
-        }
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
 
         try {
             if (selectedUser) {
-                await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${selectedUser.id}`, payload);
+                // UPDATE existing user
+                const preferences = {
+                    address: formData.address,
+                    schedule_travel_time: formData.scheduleTravelTime,
+                    interests: formData.interests.split(",").map((s: string) => s.trim()).filter((s: string) => s),
+                    wishlist: formData.wishlist,
+                    context: formData.context,
+                    budget: {
+                        min: Number(formData.budgetMin),
+                        max: Number(formData.budgetMax),
+                        currency: "USD"
+                    },
+                    dietary: formData.dietary.split(",").map((s: string) => s.trim()).filter((s: string) => s),
+                    travel: {
+                        max_distance_miles: Number(formData.travelDist),
+                        preferred_transport: formData.travelTransport
+                    }
+                };
+
+                const payload: any = {
+                    name: formData.name,
+                    email: formData.email,
+                    phone_number: formData.phone_number,
+                    role: formData.role,
+                    preferences: preferences
+                };
+
+                if (formData.password) {
+                    payload.password = formData.password;
+                }
+
+                await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${selectedUser.id}`, payload, { headers });
             } else {
-                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, payload);
+                // CREATE NEW (Invite)
+                // Use the invite endpoint
+                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/families/invite`, {
+                    email: formData.email,
+                    name: formData.name,
+                    role: formData.role
+                }, { headers });
+
+                alert(`Invite sent to ${formData.email}! (Check console for dev link)`);
             }
+
             fetchUsers();
             setIsEditing(false);
             setSelectedUser(null);
         } catch (err) {
             console.error("Error saving user:", err);
-            alert("Failed to save user");
+            alert("Failed to save/invite user");
         }
     };
 
@@ -175,7 +192,10 @@ export default function SettingsPage() {
                                                     onClick={() => handleUserClick(user)}
                                                     className={`p-3 rounded cursor-pointer transition-colors ${selectedUser?.id === user.id ? 'bg-blue-50 border-blue-200 border' : 'hover:bg-gray-50 border border-transparent'}`}
                                                 >
-                                                    <div className="font-medium">{user.name}</div>
+                                                    <div className="font-medium flex justify-between">
+                                                        {user.name}
+                                                        {user.status === 'pending_invite' && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pending</span>}
+                                                    </div>
                                                     <div className="text-sm text-gray-500">{user.email}</div>
                                                 </div>
                                             ))}
@@ -189,7 +209,7 @@ export default function SettingsPage() {
                                     {isEditing ? (
                                         <div className="bg-white rounded-lg shadow p-6">
                                             <h2 className="text-xl font-semibold mb-6">
-                                                {selectedUser ? `Edit Profile: ${selectedUser.name}` : "New Family Member"}
+                                                {selectedUser ? `Edit Profile: ${selectedUser.name}` : "Invite New Member"}
                                             </h2>
 
                                             <div className="space-y-6">
@@ -227,18 +247,20 @@ export default function SettingsPage() {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            {selectedUser ? "New Password (leave blank to keep)" : "Password"}
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            className="w-full border rounded p-2"
-                                                            placeholder={selectedUser ? "••••••••" : "Required"}
-                                                            value={formData.password || ""}
-                                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                                        />
-                                                    </div>
+                                                    {selectedUser && (
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                New Password (leave blank to keep)
+                                                            </label>
+                                                            <input
+                                                                type="password"
+                                                                className="w-full border rounded p-2"
+                                                                placeholder="••••••••"
+                                                                value={formData.password || ""}
+                                                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                                            />
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                                                         <select

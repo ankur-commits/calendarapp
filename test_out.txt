@@ -1,0 +1,61 @@
+/opt/anaconda3/lib/python3.13/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.3.4, pluggy-1.5.0
+rootdir: /Users/ankursanghi/Documents/Calendar App
+plugins: anyio-4.12.0, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+backend/tests/test_family_flow.py F
+
+=================================== FAILURES ===================================
+_________________________ test_family_onboarding_flow __________________________
+
+    def test_family_onboarding_flow():
+        # 1. Register a new user (Founder)
+        reg_response = client.post(
+            "/api/auth/register",
+            json={
+                "name": "Founder",
+                "email": "founder@example.com",
+                "password": "pass",
+                "role": "admin",
+                "phone_number": "111"
+            }
+        )
+>       assert reg_response.status_code == 200
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+backend/tests/test_family_flow.py:18: AssertionError
+=============================== warnings summary ===============================
+backend/app/database.py:24
+  /Users/ankursanghi/Documents/Calendar App/backend/app/database.py:24: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+../../../../opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:345
+  /opt/anaconda3/lib/python3.13/site-packages/pydantic/_internal/_config.py:345: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+backend/tests/test_family_flow.py::test_family_onboarding_flow
+  /Users/ankursanghi/Documents/Calendar App/backend/app/routes/auth.py:26: SAWarning: relationship 'Chore.added_by' will copy column users.id to column chores.assigned_to_user_id, which conflicts with relationship(s): 'Chore.assigned_to' (copies users.id to chores.assigned_to_user_id). If this is not the intention, consider if these relationships should be linked with back_populates, or if viewonly=True should be applied to one or more if they are read-only. For the less common case that foreign key constraints are partially overlapping, the orm.foreign() annotation can be used to isolate the columns that should be written towards.   To silence this warning, add the parameter 'overlaps="assigned_to"' to the 'Chore.added_by' relationship. (Background on this warning at: https://sqlalche.me/e/20/qzyx) (This warning originated from the `configure_mappers()` process, which was invoked automatically in response to a user-initiated operation.)
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_family_flow.py::test_family_onboarding_flow - asser...
+======================== 1 failed, 10 warnings in 0.07s ========================

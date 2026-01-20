@@ -88,3 +88,36 @@ def dev_login(email_data: schemas.UserEmail, db: Session = Depends(database.get_
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/setup-invite")
+def setup_invite(user_update: schemas.UserCreate, token: str, db: Session = Depends(database.get_db)):
+    # Find user by invite token
+    user = db.query(models.User).filter(models.User.invite_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid invite token")
+        
+    if user.invite_expires_at and user.invite_expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invite expired")
+        
+    # Update user details
+    hashed_password = auth.get_password_hash(user_update.password)
+    user.hashed_password = hashed_password
+    user.name = user_update.name
+    
+    # In case they correct their email? Or just keep it.
+    # user.email = user_update.email 
+    
+    user.request_token = None # Clear token
+    user.status = "active"
+    user.invite_token = None
+    
+    db.commit()
+    db.refresh(user)
+    
+    # Generate login token so they are auto-logged in
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "user": user}

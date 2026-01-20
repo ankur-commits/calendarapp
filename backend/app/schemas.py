@@ -38,6 +38,7 @@ class UserBase(BaseModel):
     avatar_url: Optional[str] = None
     mobile_phone: Optional[str] = None
     color: str = "#3B82F6"
+    status: str = "active"
 
 class UserEmail(BaseModel):
     email: str
@@ -97,11 +98,22 @@ class ShoppingItem(ShoppingItemBase):
     class Config:
         orm_mode = True
 
+    class Config:
+        orm_mode = True
+
 class FamilyBase(BaseModel):
     name: str
 
 class FamilyCreate(FamilyBase):
     pass
+
+class FamilyInvite(BaseModel):
+    email: str
+    name: str = "Family Member"
+    role: str = "member"
+
+class JoinRequest(BaseModel):
+    admin_email: str
 
 class Family(FamilyBase):
     id: int

@@ -1,14 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models, schemas
+from .. import models, schemas, auth
 from ..database import get_db
 
 router = APIRouter()
 
 @router.get("/", response_model=List[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = db.query(models.User).offset(skip).limit(limit).all()
+def read_users(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    if not current_user.family_id:
+        # If user has no family, return only themselves
+        return [current_user]
+        
+    users = db.query(models.User).filter(models.User.family_id == current_user.family_id).offset(skip).limit(limit).all()
     return users
 
 @router.post("/", response_model=schemas.User)

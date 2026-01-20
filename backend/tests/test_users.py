@@ -26,9 +26,17 @@ def test_read_users(client: TestClient):
         },
     )
     
-    response = client.get("/api/users/")
+    # Login
+    login_res = client.post(
+        "/api/auth/token",
+        data={"username": "user1@example.com", "password": "pwd"},
+    )
+    token = login_res.json()["access_token"]
+    
+    response = client.get("/api/users/", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     data = response.json()
+    # Should only return self (1 user) because no family
     assert len(data) >= 1
 
 def test_read_user_by_id(client: TestClient):

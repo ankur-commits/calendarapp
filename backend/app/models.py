@@ -41,6 +41,11 @@ class User(Base):
     
     preferences = Column(JSON, default={})
 
+    # [NEW] Invite & Status
+    invite_token = Column(String, nullable=True)
+    invite_expires_at = Column(DateTime, nullable=True)
+    status = Column(String, default="active") # 'active', 'pending_invite', 'requested_join'
+
 class Event(Base):
     __tablename__ = "events"
 
