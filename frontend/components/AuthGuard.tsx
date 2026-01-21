@@ -45,7 +45,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                const user = response.data[0]; // Logic from users.py: returns [current_user] if no family or filtered list.
+                const user = Array.isArray(response.data) ? response.data[0] : response.data;
 
                 if (user && !user.family_id) {
                     router.push("/onboarding");
