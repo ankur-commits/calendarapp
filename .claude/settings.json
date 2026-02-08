@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push origin staging)",
+      "Bash(git branch*)",
+      "Bash(git checkout staging)",
+      "Bash(railway status*)",
+      "Bash(railway logs*)",
+      "Bash(railway variables*)",
+      "Bash(railway open*)",
+      "Bash(vercel logs*)",
+      "Bash(vercel inspect*)",
+      "Bash(vercel env*)",
+      "Bash(cd backend*pytest*)",
+      "Bash(cd frontend*npm test*)",
+      "Bash(cd backend*alembic*)",
+      "Bash(cd backend*uvicorn*)",
+      "Bash(cd frontend*npm run*)",
+      "Bash(cd frontend*npm install*)",
+      "Bash(cd backend*pip install*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(gh run watch*)",
+      "Bash(gh auth status*)",
+      "Bash(gh api*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push origin main*)",
+      "Bash(git reset --hard*)",
+      "Bash(git checkout . *)",
+      "Bash(git clean*)",
+      "Bash(rm -rf*)",
+      "Bash(railway delete*)",
+      "Bash(vercel remove*)",
+      "Bash(railway down*)"
+    ]
+  }
+}
