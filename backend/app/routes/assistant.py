@@ -82,8 +82,7 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
             model='gemini-2.0-flash',
             contents=full_prompt,
             config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-                response_mime_type='application/json'
+                tools=[types.Tool(google_search=types.GoogleSearch())]
             )
         )
         

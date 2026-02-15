@@ -106,9 +106,14 @@ class AILearningService:
             model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-                response_mime_type='application/json'
+                tools=[types.Tool(google_search=types.GoogleSearch())]
             )
         )
         
-        return json.loads(response.text)
+        result_text = response.text
+        if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0].strip()
+            
+        return json.loads(result_text)
