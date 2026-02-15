@@ -73,13 +73,17 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
         """
         
         full_prompt = f"{system_instruction}\n\nUser Query: {request.query}"
-        prompt = full_prompt
+        
+        # Use simple prompt, but construct it carefully
+        print(f"DEBUG: Calling Gemini with prompt: {request.query}")
+        
         # Generate content with Google Search tool enabled
         response = client.models.generate_content(
             model='gemini-2.0-flash',
-            contents=prompt,
+            contents=full_prompt,
             config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())]
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                response_mime_type='application/json'
             )
         )
         
@@ -102,11 +106,16 @@ async def search_events(request: SearchRequest = Body(...), db: Session = Depend
         
         # Basic validation
         final_suggestions = []
-        for item in data.get("suggestions", []):
+        # Support both 'suggestions' key or direct list if model messes up
+        items = data.get("suggestions", []) if isinstance(data, dict) else data
+        if not isinstance(items, list):
+             items = []
+
+        for item in items:
             # Ensure description contains the link if ticket_url is present, for UI visibility
             url = item.get("ticket_url")
             desc = item.get("description", "")
-            if url and "http" in url:
+            if url and "http" in url and "Buy Tickets" not in desc:
                item["description"] = f"{desc}\n\n[Buy Tickets]({url})"
             
             final_suggestions.append(item)
