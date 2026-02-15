@@ -13,7 +13,7 @@ interface AddEventModalProps {
     existingEvents?: any[];
 }
 
-export default function AddEventModal({ isOpen, onClose, onEventCreated, initialData, existingEvents = [] }: AddEventModalProps) {
+export default function AddEventModal({ isOpen, onClose, onEventCreated, initialData, existingEvents }: AddEventModalProps) {
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [conflicts, setConflicts] = useState<any[]>([]);
@@ -82,7 +82,7 @@ export default function AddEventModal({ isOpen, onClose, onEventCreated, initial
         const start = new Date(`${formData.start_date}T${formData.start_time}`);
         const end = new Date(`${formData.end_date}T${formData.end_time}`);
 
-        const foundConflicts = existingEvents.filter(evt => {
+        const foundConflicts = (existingEvents || []).filter(evt => {
             const evtStart = new Date(evt.start_time);
             const evtEnd = new Date(evt.end_time);
 
