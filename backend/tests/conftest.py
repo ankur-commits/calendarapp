@@ -5,6 +5,7 @@ from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import Base, get_db
+from app import models  # Explicitly register models checking
 
 # Use in-memory SQLite for testing
 SQLALCHEMY_DATABASE_URL = "sqlite://"

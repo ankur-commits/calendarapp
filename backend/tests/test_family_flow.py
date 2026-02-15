@@ -2,9 +2,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 import uuid
 
-client = TestClient(app)
-
-def test_family_onboarding_flow():
+def test_family_onboarding_flow(client):
     # Generate unique emails
     run_id = str(uuid.uuid4())[:8]
     founder_email = f"founder_{run_id}@example.com"
