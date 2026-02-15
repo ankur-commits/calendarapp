@@ -35,7 +35,7 @@ export default function UserSwitcher() {
 
     const handleSwitch = async (email: string) => {
         try {
-            const response = await axios.post("http://localhost:8000/api/auth/dev-login", { email });
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/dev-login`, { email });
             localStorage.setItem("token", response.data.access_token);
             window.location.reload(); // Hard reload to reset state
         } catch (error) {
