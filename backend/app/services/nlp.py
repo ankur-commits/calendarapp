@@ -87,6 +87,7 @@ def parse_natural_query(
     """
 
     try:
+        print(f"Calling LLM with query: {query}")
         response = client.chat.completions.create(
             model=model,
             temperature=0.0,
@@ -95,8 +96,10 @@ def parse_natural_query(
                 {"role": "user", "content": f"Parse this family intent: {query}"}
             ]
         )
+        print("LLM response received")
         
         result_text = response.choices[0].message.content.strip()
+        print(f"LLM Result Text: {result_text}")
         
         try:
             parsed_result = json.loads(result_text)
@@ -106,6 +109,7 @@ def parse_natural_query(
                 parsed_result = json.loads(json_match.group())
             else:
                 # If completely failed to parse JSON, wrap as a single generic event
+                print("JSON parse failed, using fallback")
                 return _fallback_parse(query)
                 
         # Validate structure
@@ -117,6 +121,8 @@ def parse_natural_query(
         
     except Exception as e:
         print(f"Error parsing query with LLM: {e}")
+        import traceback
+        traceback.print_exc()
         return _fallback_parse(query)
 
 
