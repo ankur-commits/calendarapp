@@ -39,8 +39,14 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
         setHasSearched(true);
         setItems([]);
 
+        // Simple heuristic to distinguish "Discovery/Search" from "Action/Create"
+        const searchKeywords = /^(what|find|search|suggest|show|are there|is there|list|recommend|looking for)\b/i;
+        const isSearch = searchKeywords.test(query);
+
         try {
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant/interact`, {
+            const endpoint = isSearch ? '/api/assistant/search' : '/api/assistant/interact';
+
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
                 query: query,
                 user_id: 1 // Default user for now
             });
@@ -48,14 +54,24 @@ export default function EventAssistant({ onAddEvent }: EventAssistantProps) {
             const data = response.data;
             const newItems: AssistantItem[] = [];
 
-            if (data.events) {
-                data.events.forEach((evt: any) => newItems.push({ type: 'event', data: evt }));
-            }
-            if (data.shopping_list) {
-                data.shopping_list.forEach((item: any) => newItems.push({ type: 'shopping', data: item }));
-            }
-            if (data.todos) {
-                data.todos.forEach((todo: any) => newItems.push({ type: 'todo', data: todo }));
+            if (isSearch) {
+                // Handle Search Response
+                if (data.suggestions) {
+                    data.suggestions.forEach((suggestion: any) => {
+                        newItems.push({ type: 'event', data: suggestion });
+                    });
+                }
+            } else {
+                // Handle Interact/Action Response
+                if (data.events) {
+                    data.events.forEach((evt: any) => newItems.push({ type: 'event', data: evt }));
+                }
+                if (data.shopping_list) {
+                    data.shopping_list.forEach((item: any) => newItems.push({ type: 'shopping', data: item }));
+                }
+                if (data.todos) {
+                    data.todos.forEach((todo: any) => newItems.push({ type: 'todo', data: todo }));
+                }
             }
 
             setItems(newItems);
