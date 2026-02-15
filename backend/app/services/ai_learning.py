@@ -77,15 +77,18 @@ class AILearningService:
         """
         profile_context = self.get_user_profile_context(user_id)
         
+        current_time = datetime.now().isoformat()
+        
         prompt = f"""
-        You are a smart family assistant. 
+        You are a smart family assistant.
+        Current Time: {current_time}
         User Context:
         {profile_context}
         
         User Query: "{query}"
         
         Extract the following intents:
-        1. Calendar Events (check context for usual locations/times)
+        1. Calendar Events (You MUST use Google Search to find REAL events if the user asks for suggestions or what is happening. Verify dates and times.)
         2. Shopping Items
         3. To-Do Tasks
         
@@ -93,7 +96,7 @@ class AILearningService:
         
         JSON Schema:
         {{
-            "events": [ {{ "title": "...", "start_time": "ISO", "location": "...", "attendees": [...], "category": "..." }} ],
+            "events": [ {{ "title": "...", "description": "...", "start_time": "ISO", "location": "...", "attendees": [...], "category": "..." }} ],
             "shopping_list": [ {{ "name": "...", "category": "General" }} ],
             "todos": [ {{ "title": "...", "due_date": "ISO", "assigned_to": "..." }} ]
         }}
@@ -103,6 +106,7 @@ class AILearningService:
             model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
                 response_mime_type='application/json'
             )
         )
