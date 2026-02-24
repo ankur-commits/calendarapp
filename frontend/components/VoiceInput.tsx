@@ -185,6 +185,18 @@ export default function VoiceInput({ onEventCreated, onOpenModal, isCompact = fa
                         </div>
                     </div>
                 )}
+                {errorMessage && (
+                    <div className="absolute top-12 right-0 bg-red-50 p-4 shadow-xl rounded-lg border border-red-200 w-80 z-50">
+                        <p className="font-semibold text-red-700 mb-2">Error</p>
+                        <p className="text-red-600 mb-3 text-sm">{errorMessage}</p>
+                        <button
+                            onClick={() => setErrorMessage(null)}
+                            className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm hover:bg-red-200 w-full"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
             </div>
         );
     }

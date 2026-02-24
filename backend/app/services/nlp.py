@@ -177,7 +177,8 @@ def parse_voice_command(
             print(f"Transcribing file: {audio_file_path}")
             transcription = client.audio.transcriptions.create(
                 model="whisper-1", 
-                file=audio_file
+                file=audio_file,
+                language="en"
             )
             text = transcription.text
             print(f"Transcription result: {text}")
